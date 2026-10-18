@@ -30,7 +30,7 @@ export const products = [
     badge: 'Preview item',
   },
   {
-    id: 'LV-ER-001',
+    id: 'LV-ER-002',
     name: 'Twist Light Hoops',
     category: 'Earrings',
     price: 1199,
@@ -49,7 +49,7 @@ export const products = [
     badge: 'Preview item',
   },
   {
-    id: 'LV-RG-001',
+    id: 'LV-RG-003',
     name: 'Golden Hour Band',
     category: 'Rings',
     price: 699,
@@ -68,7 +68,7 @@ export const products = [
     badge: 'Preview item',
   },
   {
-    id: 'LV-BR-001',
+    id: 'LV-BR-004',
     name: 'Golden Link Bracelet',
     category: 'Bracelets',
     price: 1199,
