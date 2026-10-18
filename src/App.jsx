@@ -141,7 +141,7 @@ export default function App() {
             </div>
             <span className="product-count">{visibleProducts.length} PIECES</span>
           </div>
-          <p className="catalog-preview-note">Preview catalogue · replace sample products, prices, and details in <code>src/data/products.js</code> before publishing.</p>
+          
           {visibleProducts.length ? <div className="product-grid">{visibleProducts.map((product) => <ProductCard key={product.id} product={product} onOpen={setSelectedProduct} />)}</div> : <div className="empty-state">No pieces found. Try another search or category.</div>}
           <div className="collection-footnote"><span>✦</span> Each piece is a small celebration of you.</div>
         </section>
