@@ -66,7 +66,7 @@ export default function App() {
       setIsSubmittingEnquiry(false);
     }
   };
-
+//sm tech private limited
   const visibleProducts = useMemo(() => products.filter((product) => {
     const inCategory = category === 'All pieces' || product.category === category;
     const text = `${product.name} ${product.category} ${product.material}`.toLowerCase();
