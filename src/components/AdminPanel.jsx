@@ -7,6 +7,12 @@ const categories = ['Earrings', 'Necklaces', 'Rings', 'Bracelets'];
 const categoryCodes = { Earrings: 'ER', Necklaces: 'NK', Rings: 'RG', Bracelets: 'BR' };
 const blankProduct = { id: '', name: '', category: 'Earrings', price: '', oldPrice: '', shortDescription: '', description: '', material: '', finish: '', dimensions: '', closure: '', care: '', images: [], featured: false, badge: '', is_active: true, photoCredit: '', photoCreditUrl: '' };
 
+function isPasswordSetupLink() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const params = new URLSearchParams(window.location.search);
+  return ['invite', 'recovery'].includes(hash.get('type') || params.get('type'));
+}
+
 function newReference(category, list) {
   const prefix = `LV-${categoryCodes[category] || 'PR'}-`;
   const max = list.reduce((value, item) => item.id.startsWith(prefix) ? Math.max(value, Number(item.id.slice(prefix.length)) || 0) : value, 0);
@@ -20,6 +26,7 @@ function displayDate(value) {
 export default function AdminPanel() {
   const [session, setSession] = useState(null);
   const [access, setAccess] = useState('checking');
+  const [passwordSetup, setPasswordSetup] = useState(isPasswordSetupLink);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
@@ -58,7 +65,8 @@ export default function AdminPanel() {
       if (current) checkAdmin(current);
       else setAccess('signed-out');
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, current) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, current) => {
+      if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && isPasswordSetupLink())) setPasswordSetup(true);
       setSession(current);
       if (!current) setAccess('signed-out');
       else window.setTimeout(() => checkAdmin(current), 0);
@@ -178,11 +186,30 @@ export default function AdminPanel() {
     }
   };
 
+  const finishPasswordSetup = async (event) => {
+    event.preventDefault();
+    setPasswordFeedback('');
+    if (newPassword.length < 8) { setPasswordFeedback('Choose a password with at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { setPasswordFeedback('The two passwords do not match.'); return; }
+    setPasswordSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordSaving(false);
+    if (error) { setPasswordFeedback(error.message); return; }
+    setNewPassword('');
+    setConfirmPassword('');
+    setPasswordFeedback('Password saved. Opening your owner dashboard…');
+    window.history.replaceState({}, document.title, window.location.pathname);
+    window.setTimeout(() => setPasswordSetup(false), 700);
+  };
+
   const filteredProducts = useMemo(() => products.filter((product) => `${product.name} ${product.category} ${product.id}`.toLowerCase().includes(productSearch.toLowerCase())), [products, productSearch]);
   const newCount = enquiries.filter((item) => item.status === 'new').length;
   const counts = categories.map((category) => ({ category, count: products.filter((product) => product.category === category).length }));
 
   if (access === 'not-configured') return <SetupRequired />;
+  if (passwordSetup && !session && access === 'checking') return <div className="admin-loading"><LoaderCircle className="spin" /> Verifying your secure setup link…</div>;
+  if (passwordSetup && !session && access === 'signed-out') return <InvalidSetupLink />;
+  if (passwordSetup && session) return <PasswordSetupScreen email={session.user?.email} password={newPassword} setPassword={setNewPassword} confirmPassword={confirmPassword} setConfirmPassword={setConfirmPassword} onSubmit={finishPasswordSetup} saving={passwordSaving} feedback={passwordFeedback} />;
   if (access === 'checking') return <div className="admin-loading"><LoaderCircle className="spin" /> Checking owner access…</div>;
   if (access === 'signed-out') return <LoginScreen email={email} setEmail={setEmail} password={password} setPassword={setPassword} onSubmit={signIn} error={authError} />;
   if (access === 'setup-error') return <SetupRequired error={authError} />;
@@ -231,6 +258,15 @@ export default function AdminPanel() {
 function BrandMark() { return <a className="admin-brand" href="/" aria-label="Lavéra"><img src="/images/laveralogo.jpeg" alt="" /><span>Lavéra<small>OWNER STUDIO</small></span></a>; }
 function AdminLoader() { return <div className="admin-loader"><LoaderCircle className="spin" /> Loading workspace…</div>; }
 function Stat({ icon, label, value, accent }) { return <article className={`admin-stat ${accent ? 'admin-stat--accent' : ''}`}><span className="admin-stat__icon">{icon}</span><span className="admin-stat__label">{label}</span><strong>{value}</strong><small>Current collection</small></article>; }
+
+function PasswordSetupScreen({ email, password, setPassword, confirmPassword, setConfirmPassword, onSubmit, saving, feedback }) {
+  const isSuccess = feedback.startsWith('Password saved');
+  return <div className="admin-login-wrap"><div className="admin-login"><BrandMark /><span className="admin-login__kicker">SECURE OWNER SETUP</span><h1>Create your password.</h1><p>Welcome{email ? `, ${email}` : ''}. Choose a private password for the Lavéra owner dashboard.</p><form onSubmit={onSubmit}><label>New password<input type="password" autoComplete="new-password" required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="At least 8 characters" /></label><label>Confirm new password<input type="password" autoComplete="new-password" required minLength={8} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Type it again" /></label>{feedback && <p className={isSuccess ? 'password-feedback password-feedback--success' : 'admin-form-error'}>{feedback}</p>}<button className="admin-primary" type="submit" disabled={saving || isSuccess}>{saving ? <LoaderCircle className="spin" size={16} /> : <Check size={16} />}{saving ? 'Saving…' : isSuccess ? 'Password saved' : 'Set password'}</button></form><span className="admin-login__foot"><ShieldCheck size={14} /> This password is stored securely by Supabase</span></div></div>;
+}
+
+function InvalidSetupLink() {
+  return <div className="admin-login-wrap"><div className="admin-login"><BrandMark /><span className="admin-login__kicker">LINK EXPIRED OR ALREADY USED</span><h1>Let’s get you a fresh link.</h1><p>This secure setup link could not be verified. Ask the project owner to send a new invitation or password reset link after confirming the website redirect settings.</p><a className="admin-primary admin-link-button" href="/admin">Go to owner sign in <ChevronRight size={17} /></a></div></div>;
+}
 
 function LoginScreen({ email, setEmail, password, setPassword, onSubmit, error }) {
   return <div className="admin-login-wrap"><a className="admin-login-back" href="/">← Back to Lavéra website</a><div className="admin-login"><BrandMark /><span className="admin-login__kicker">A WARM WELCOME BACK</span><h1>Your studio awaits.</h1><p>Sign in to tend to your collection and customer messages.</p><form onSubmit={onSubmit}><label>Email address<input type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="owner@example.com" /></label><label>Password<input type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" /></label>{error && <p className="admin-form-error">{error}</p>}<button className="admin-primary" type="submit">Sign in <ChevronRight size={17} /></button></form><span className="admin-login__foot"><ShieldCheck size={14} /> Private owner access</span></div></div>;

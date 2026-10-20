@@ -8,6 +8,12 @@ import AdminPanel from './components/AdminPanel.jsx';
 import { supabase } from './lib/supabase.js';
 import { productFromDatabase } from './lib/catalog.js';
 
+function isPasswordSetupLink() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const params = new URLSearchParams(window.location.search);
+  return ['invite', 'recovery'].includes(hash.get('type') || params.get('type'));
+}
+
 export default function App() {
   const [category, setCategory] = useState('All pieces');
   const [query, setQuery] = useState('');
@@ -21,10 +27,10 @@ export default function App() {
   const [isSubmittingEnquiry, setIsSubmittingEnquiry] = useState(false);
   const [catalogProducts, setCatalogProducts] = useState(products);
   const [catalogError, setCatalogError] = useState('');
-  const [isAdminRoute, setIsAdminRoute] = useState(window.location.hash === '#admin' || window.location.pathname === '/admin');
+  const [isAdminRoute, setIsAdminRoute] = useState(window.location.hash === '#admin' || window.location.pathname === '/admin' || isPasswordSetupLink());
 
   useEffect(() => {
-    const syncRoute = () => setIsAdminRoute(window.location.hash === '#admin' || window.location.pathname === '/admin');
+    const syncRoute = () => setIsAdminRoute(window.location.hash === '#admin' || window.location.pathname === '/admin' || isPasswordSetupLink());
     window.addEventListener('hashchange', syncRoute);
     window.addEventListener('popstate', syncRoute);
     return () => {
