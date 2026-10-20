@@ -42,7 +42,7 @@ export default function ProductDetails({ product, onClose, onEnquire }) {
         <div className="detail-copy">
           <p className="eyebrow">{product.category} <span>·</span> LAVÉRA COLLECTION</p>
           <h2 id="detail-title">{product.name}</h2>
-          <div className="detail-price">₹{product.price.toLocaleString('en-IN')} {product.oldPrice && <del>₹{product.oldPrice.toLocaleString('en-IN')}</del>}</div>
+          <div className="detail-price">₹{Number(product.price).toLocaleString('en-IN')} {product.oldPrice && <del>₹{Number(product.oldPrice).toLocaleString('en-IN')}</del>}</div>
           <div className="detail-reference"><div><span>PRODUCT REFERENCE</span><strong>{product.id}</strong></div><button type="button" onClick={copyProductId} aria-label={`Copy product reference ${product.id}`}>{copyStatus.startsWith('Copied') ? <Check size={14} /> : <Copy size={14} />}{copyStatus.startsWith('Copied') ? 'Copied' : 'Copy code'}</button></div>
           <p className="copy-status" aria-live="polite">{copyStatus}</p>
           <p className="detail-description">{product.description}</p>

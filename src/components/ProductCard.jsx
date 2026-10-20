@@ -17,7 +17,7 @@ export default function ProductCard({ product, onOpen }) {
       </div>
       <div className="product-card__meta">
         <div><span className="product-card__category">{product.category}</span><h3>{product.name}</h3><span className="product-card__reference">REF. {product.id}</span></div>
-        <div className="product-price"><span>₹{product.price.toLocaleString('en-IN')}</span>{product.oldPrice && <del>₹{product.oldPrice.toLocaleString('en-IN')}</del>}</div>
+        <div className="product-price"><span>₹{Number(product.price).toLocaleString('en-IN')}</span>{product.oldPrice && <del>₹{Number(product.oldPrice).toLocaleString('en-IN')}</del>}</div>
       </div>
       <p className="product-card__description">{product.shortDescription}</p>
     </button>
