@@ -56,9 +56,17 @@ create table if not exists public.enquiries (
   created_at timestamptz not null default now()
 );
 
+-- Aggregate product-detail opens; visitor identities and IP addresses are not stored.
+create table if not exists public.product_view_counts (
+  product_id text primary key references public.products(id) on delete cascade,
+  view_count bigint not null default 0 check (view_count >= 0),
+  last_viewed_at timestamptz not null default now()
+);
+
 alter table public.admin_users enable row level security;
 alter table public.products enable row level security;
 alter table public.enquiries enable row level security;
+alter table public.product_view_counts enable row level security;
 
 drop policy if exists "Admins can read allowlist" on public.admin_users;
 create policy "Admins can read allowlist" on public.admin_users
@@ -90,11 +98,40 @@ drop policy if exists "Admins can delete enquiries" on public.enquiries;
 create policy "Admins can delete enquiries" on public.enquiries
   for delete to authenticated using ((select public.is_lavera_admin()));
 
+drop policy if exists "Admins can read product view counts" on public.product_view_counts;
+create policy "Admins can read product view counts" on public.product_view_counts
+  for select to authenticated using ((select public.is_lavera_admin()));
+
+create or replace function public.record_product_view(p_product_id text)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if p_product_id is null or char_length(p_product_id) > 100 then
+    return;
+  end if;
+
+  insert into public.product_view_counts as existing (product_id, view_count, last_viewed_at)
+  select p.id, 1, now()
+  from public.products p
+  where p.id = p_product_id and p.is_active
+  on conflict (product_id) do update
+  set view_count = existing.view_count + 1,
+      last_viewed_at = now();
+end;
+$$;
+
+revoke all on function public.record_product_view(text) from public;
+grant execute on function public.record_product_view(text) to anon, authenticated;
+
 grant select on public.products to anon, authenticated;
 grant insert, update, delete on public.products to authenticated;
 grant insert on public.enquiries to anon, authenticated;
 grant select, update, delete on public.enquiries to authenticated;
 grant select on public.admin_users to authenticated;
+grant select on public.product_view_counts to authenticated;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('product-images', 'product-images', true, 10485760, array['image/jpeg','image/png','image/webp','image/avif'])

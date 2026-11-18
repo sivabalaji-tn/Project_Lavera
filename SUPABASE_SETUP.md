@@ -7,6 +7,7 @@ This setup connects the public gallery to Supabase and gives the owner a private
 1. Open [Supabase](https://supabase.com/dashboard) and create a project for Lavéra.
 2. In the project dashboard, open **Connect** (or **Project Settings → API Keys**) and copy the **Project URL** and **Publishable key**. The publishable key begins with `sb_publishable_`. An existing project may also show the older `anon` key; that works too.
 3. In the project, open **SQL Editor → New query**. Open `supabase/setup.sql` from this code project, copy all of its contents into the SQL Editor, and press **Run**. This creates the product table, enquiry table, private owner allowlist, product image bucket, access rules, and four demo catalog entries.
+4. To add product-view analytics to an existing project, run `supabase/product_analytics.sql` in a new SQL Editor query after deploying the analytics code. It creates an aggregate counter and a restricted RPC; it does not store visitor identities or IP addresses.
 
 ## 2. Create and approve the owner login (no invitation required)
 
@@ -46,6 +47,7 @@ The owner dashboard will be at `https://YOUR-SITE.netlify.app/admin` (or `https:
 
 1. Visit the public site. Once connected, its product cards should load from Supabase instead of the local sample list.
 2. Visit `/admin`, sign in, and add a product. The reference is generated from its category; add details and upload multiple product photos. The first photo is the cover image.
-3. Submit a test enquiry from the public site. It should appear in **Message center** and be emailed to the Gmail attached to the Web3Forms key. Change the message status in the dashboard and use **Reply** to open an email to the customer.
+3. Open a product detail on the public site, then check **Products** in the admin page for its view count. Counts are approximate and deduplicated once per browser session per product.
+4. Submit a test enquiry from the public site. It should appear in **Message center**. Email notifications are optional and require a Web3Forms key. Use **Refresh** in the inbox to check for recent messages; change the message status and use **Reply** to open an email to the customer.
 
 If the project credentials or SQL setup are missing, the public gallery falls back to the local demo catalog and the admin page shows setup guidance. The dashboard cannot be fully tested until you create the Supabase project, run the SQL, and add the owner user.

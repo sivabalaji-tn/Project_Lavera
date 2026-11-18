@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, ArrowLeft, ArrowRight, Sparkles, Copy, Check } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, Sparkles, Copy, Check, MessageCircle } from 'lucide-react';
 
 export default function ProductDetails({ product, onClose, onEnquire }) {
   const [imageIndex, setImageIndex] = useState(0);
@@ -21,6 +21,8 @@ export default function ProductDetails({ product, onClose, onEnquire }) {
   const imageCount = images.length;
   const showPreviousImage = () => setImageIndex((current) => (current - 1 + imageCount) % imageCount);
   const showNextImage = () => setImageIndex((current) => (current + 1) % imageCount);
+  const ownerMessage = `Hi Lavéra, I’m interested in ${product.name} (Product ID: ${product.id}). Could you please share more details? ${window.location.origin}`;
+  const ownerWhatsAppUrl = `https://wa.me/917867058517?text=${encodeURIComponent(ownerMessage)}`;
   const copyProductId = async () => {
     try {
       await navigator.clipboard.writeText(product.id);
@@ -56,6 +58,7 @@ export default function ProductDetails({ product, onClose, onEnquire }) {
             <div><dt>Care</dt><dd>{product.care}</dd></div>
           </dl>
           <p className="gallery-note">To ask Lavéra about this piece, share product reference <strong>{product.id}</strong>.</p>
+          <a className="detail-whatsapp" href={ownerWhatsAppUrl} target="_blank" rel="noreferrer"><MessageCircle size={16} /> Ask Lavéra on WhatsApp <span>· {product.id}</span></a>
           <button className="detail-enquire" type="button" onClick={() => onEnquire(product)}>Enquire about this piece <ArrowRight size={16} /></button>
           {product.photoCredit && <a className="photo-credit" href={product.photoCreditUrl} target="_blank" rel="noreferrer">{product.photoCredit}</a>}
         </div>

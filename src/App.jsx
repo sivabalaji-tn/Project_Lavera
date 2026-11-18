@@ -75,11 +75,26 @@ export default function App() {
     window.setTimeout(() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' }), 80);
   }, []);
 
+  const openProductDetails = useCallback((product) => {
+    setSelectedProduct(product);
+    if (!supabase) return;
+
+    const sessionKey = `lavera-product-view:${product.id}`;
+    try {
+      if (window.sessionStorage.getItem(sessionKey)) return;
+      window.sessionStorage.setItem(sessionKey, 'counted');
+    } catch {
+      // Continue without browser-side de-duplication when storage is unavailable.
+    }
+    supabase.rpc('record_product_view', { p_product_id: product.id })
+      .then(({ error }) => { if (error) console.warn('Could not record this product view:', error.message); });
+  }, []);
+
   const submitEnquiry = async (event) => {
     event.preventDefault();
     const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
     if (!accessKey && !supabase) {
-      setEnquiryStatus('Connect Supabase and set the Web3Forms access key before accepting enquiries.');
+      setEnquiryStatus('Enquiries are not connected yet. Connect Supabase to save messages in the owner inbox. Web3Forms can be added later for email alerts.');
       return;
     }
 
@@ -216,7 +231,7 @@ export default function App() {
           </div>
           {catalogError && <p className="catalog-connection-note" role="status">{catalogError}</p>}
           
-          {filteredProducts.length ? <div className="product-grid">{filteredProducts.map((product) => <ProductCard key={product.id} product={product} onOpen={setSelectedProduct} />)}</div> : <div className="empty-state">No pieces found. Try another search or category.</div>}
+          {filteredProducts.length ? <div className="product-grid">{filteredProducts.map((product) => <ProductCard key={product.id} product={product} onOpen={openProductDetails} />)}</div> : <div className="empty-state">No pieces found. Try another search or category.</div>}
           <div className="collection-footnote"><span>✦</span> Each piece is a small celebration of you.</div>
         </section>
 
